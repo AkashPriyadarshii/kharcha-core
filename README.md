@@ -1,61 +1,120 @@
-# kharcha-core
+<!-- Title: kharcha-core — deterministic Rust engine for UPI expense tracking -->
+<!-- Description: Rule-based Rust core that turns UPI/SMS/notification text into structured payments. Spam rejection, categorization, exact paise money, triple-signal dedupe, uniffi Kotlin bridge. No AI. -->
+<!-- Keywords: upi expense tracker, sms parser rust, upi parser, bank sms parser india, gpay phonepe paytm parser, transaction dedupe, uniffi kotlin, paise money, offline expense tracker, upi number parser -->
 
-Rust port of the deterministic core of [Kharcha](../kharcha) — India's UPI expense tracker.
+<div align="center">
+  <img src="assets/icon/app_icon.png" width="96" height="96" alt="kharcha-core logo">
+  <h1>kharcha-core</h1>
+  <p><strong>Deterministic Rust engine for UPI expense tracking. Text in, payment out.</strong></p>
 
-Rule-based, zero AI: SMS/notification text in → structured payment out.
+  <a href="https://github.com/AkashPriyadarshii/kharcha-core/releases"><img src="https://img.shields.io/badge/version-0.1.0-0A6B4D?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/AkashPriyadarshii/kharcha-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-0A6B4D?style=flat-square" alt="License"></a>
+  <a href="https://github.com/AkashPriyadarshii/kharcha-core/actions"><img src="https://img.shields.io/badge/tests-56%20passing-0A6B4D?style=flat-square" alt="Tests"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.96-0A6B4D?style=flat-square" alt="Rust"></a>
 
-## Layout (mirrors the Dart/Kotlin sources 1:1)
+  <p>by <a href="https://github.com/AkashPriyadarshii">Akash Priyadarshi</a></p>
+  <p>
+    <a href="#why">Why</a> ·
+    <a href="#quickstart">Quickstart</a> ·
+    <a href="#api">API</a> ·
+    <a href="#architecture">Architecture</a> ·
+    <a href="#non-goals">Non-goals</a> ·
+    <a href="docs/INTEGRATION.md">Integrate</a>
+  </p>
+</div>
+
+---
+
+## Why
+
+Every UPI payment in India arrives as text first — an SMS, a push notification, an email receipt. Three parsers (Dart generic, Kotlin generic, a 190-bank fleet) disagreed on the same message, money floated on doubles, and duplicates slipped through reworded carrier footers.
+
+- **One engine.** `engine::parse()` is the only door in. SMS, notification, email body — all one string.
+- **Triple-signal dedupe.** UPI ref → content hash (footer-proof, unlike body hashing) → 300s cross-channel window.
+- **Exact money.** i64 paise end to end. Both parents float at the edge.
+- **Proven, not promised.** 56 tests incl. a 34-row SMS parity corpus. Zero clippy warnings.
+
+## Quickstart
+
+```bash
+git clone https://github.com/AkashPriyadarshii/kharcha-core
+cargo test
+```
+
+```bash
+cargo run --bin demo -- "INR 340.00 debited from A/C **1234 to ZOMATO UPI:623829102812. Bal: INR 12,400.00"
+```
+
+```
+ParsedTransaction { payment: ParsedPayment { amount_paise: 34000, merchant: "ZOMATO", is_income: false, upi_ref: Some("623829102812"), balance_paise: Some(1240000), account_mask: Some("1234"), bank_name: None, needs_review: false }, sender: "HDFCBK", timestamp_ms: 0, content_hash: 8485077374821435771 }
+```
+
+```bash
+cargo clippy --all-targets -- -D warnings
+```
+
+| Command | What |
+|---|---|
+| `cargo test` | Full gate: 22 unit + 34 parity rows |
+| `cargo run --bin demo -- "<sms>" [sender]` | Parse one message, print the struct |
+| `cargo clippy --all-targets -- -D warnings` | Lint gate: zero warnings |
+| `cargo build --release` | cdylib (`.so`/`.dll`) for FFI consumers |
+
+## API
+
+| Call | Replaces |
+|---|---|
+| `parse_capture` / `parse_captures` | Dart `parseUpiNotification`, Kotlin `GenericUpiParser.parse` |
+| `check_capture` | `insertCaptured` dedupe (ref → hash → 300s window) |
+| `categorize_merchant` + `normalize_merchant_text` | `Categorizer` |
+| `apply_filter` | `TransactionFilter.apply` |
+| `split_bill`, `parse_amount`, `is_spam`, `encode_inbox_line` | Same-named helpers |
+
+Contracts: money is i64 paise, timestamps are epoch millis, `parse` returns null for spam/casual text by design. Full consumer guide: [docs/INTEGRATION.md](docs/INTEGRATION.md). Agent rules: [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md).
+
+## Architecture
 
 ```
 src/
-  lib.rs        — public API (see below)
-  engine.rs     — parse(sms, sender, ts): THE entry point. Sender-aware dispatch
-                  (generic backend today, bank backends plug in v1.x), batch API,
-                  deterministic content_hash per capture
-  money.rs      — parse_amount → i64 paise (port of lib/core/money.dart)
-  parser.rs     — parse_upi_notification (port of lib/core/upi_parser.dart)
-  non_transaction.rs — spam regex (folded from parser)
-  categorize.rs
-  split.rs
-  filter.rs
-  dedupe.rs     — triple-signal: ref gate + content-hash gate + 300s window
-  ffi.rs        — uniffi surface (Kotlin first): parse_capture, check_capture,
-                  categorize_merchant, apply_filter, split_bill, parse_amount,
-                  is_spam, encode_inbox_line. Core stays FFI-agnostic.
-tests/parity.rs — Dart-vs-Rust corpus parity harness (29 rows)
-src/bin/demo.rs — smoke CLI: cargo run --bin demo -- "<sms text>" [sender]
-docs/           — INTEGRATION.md (humans: consume this core), AGENT-INTEGRATION.md (agents: bind/evolve it)
+  lib.rs             — public API + uniffi scaffolding
+  engine.rs          — parse(sms, sender, ts): single entry, batch API, content hash
+  parser.rs          — UPI/bank SMS parser (Dart port, fancy-regex lookahead)
+  non_transaction.rs — spam rejection (recharge/OTP/loan/request/failure)
+  categorize.rs      — merchant normalize + learned-beats-builtin rule match
+  dedupe.rs          — ref gate + hash gate + 300s window with ref backfill
+  filter.rs          — in-memory transaction filter
+  money.rs           — parse_amount → i64 paise
+  split.rs           — exact-paise bill split
+  ffi.rs             — uniffi surface (Kotlin first); core stays FFI-agnostic
+  bin/demo.rs        — smoke CLI
+tests/parity.rs      — 34-row Dart-vs-Rust SMS corpus
+bindings/kotlin/     — generated uniffi Kotlin bindings (committed, never hand-edited)
+docs/                — INTEGRATION.md (humans), AGENT-INTEGRATION.md (agents)
 ```
 
-## Why better than both parents
+## Non-goals
 
-- **One engine, not three.** Kharcha parses the same SMS up to 3 ways (Dart
-  generic, Kotlin generic, bank fleet) and reconciles with an if/else.
-  Pennywise has one engine but no generic fallback ordering. Here:
-  `engine::parse()` is the only door in.
-- **Triple-signal dedupe.** kharcha: ref + window. pennywise: md5(body) —
-  breaks when carriers append footers. Here: ref → content hash
-  (sender|amount|direction|merchant|ref, footer-proof) → window.
-- **Exact money.** Both parents float at the edge (`double` 2dp / BigDecimal).
-  Here: i64 paise end to end.
-- **Batch API.** `parse_batch()` drains 1000-SMS backlogs with compiled-once
-  regexes. Neither parent has it.
-- **Gate: `cargo test` + `cargo clippy -- -D warnings`.** No Windows-sqlite
-  test curse, no Gradle.
+- **No bank fleet (v1.x).** 190 per-bank parsers stay out until live captures demand them; the generic path covers common formats.
+- **No storage, clock, or network.** The core decides; callers own rows, timestamps, and sync.
+- **No AI.** Rule maps and regex only. A PR containing "LLM" is rejected.
+- **No fraud detection.** Parsing text is this crate's whole job; safety-switch logic lives in the app.
+- **No multi-currency amounts yet.** Parser reads ₹/Rs/INR; AED/SGD SMS return null (v1.x).
 
-## Run
+---
 
-```bash
-cargo test            # full gate: unit + parity
-cargo run --bin demo -- "Spent Rs 540 on Swiggy via UPI ref 123456789012"
-```
+### Ecosystem
 
-## Rules
+- [design-genius](https://github.com/AkashPriyadarshii/design-genius)
+- [akash-design-engineering](https://github.com/AkashPriyadarshii/akash-design-engineering)
+- [tdlib-android](https://github.com/AkashPriyadarshii/tdlib-android)
+- [kharcha](https://github.com/AkashPriyadarshii/kharcha)
 
-- i64 paise internally. Parse/format at the edge. No float money math, ever.
-- `fancy-regex` only where Dart uses lookahead — patterns stay near-verbatim to the Dart source for parity diffing. Replace only if a benchmark proves a hot path.
-- Regex ports are ASCII-classed mechanically (`\d`→`[0-9]`, `\s`→`[ \t\n\x0B\f\r]`; `fancy-regex 0.14` rejects `(?-u)`). Dart `\b` without `unicode:true` is ASCII but our `\b` stays Unicode — the one documented divergence, pinned by non-ASCII rows. Do not "improve" further — parity first.
-- `ParsedPayment` field order and names follow `ParsedUpiPayment` / pennywise `ParsedTransaction`.
-- Behavior corpus lives in tests/parity.rs (parser/dedupe pins); unit tests co-locate per module (money/split/categorize/filter/ffi). A behavior change without a test row is not done.
-- ponytail: fewest files, one line if possible, deletion over addition. Mark known ceilings with `// ponytail:`.
-- No repo init per owner. Local crate only — no publish, no git.
+### Author
+
+**Akash Priyadarshi** (Patna, Bihar, India) · [GitHub](https://github.com/AkashPriyadarshii) · [Portfolio](https://akashpriyadarshi.vercel.app) · [LinkedIn](https://linkedin.com/in/akash-priyadarshi-1aa51b37a) · [Resume](https://akashpriyadarshii.github.io/Resume/)
+
+### Social
+
+[X / Twitter](https://x.com/Akash__ydv001) · [Threads](https://www.threads.com/@free_dev2026) · [Instagram](https://www.instagram.com/akash.priyadarshii/) · [Reddit](https://reddit.com/user/DragonfruitWeak2801)
+
+*Deterministic UPI parsing in Rust — sms parser, upi expense tracker core, offline-first fintech.*

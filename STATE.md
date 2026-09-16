@@ -1,6 +1,8 @@
 # kharcha-core — State
 
 > Update after every merged change. Single source of truth for where this crate stands.
+>
+> PUBLIC: https://github.com/AkashPriyadarshii/kharcha-core (MIT, `main`).
 
 ## Current status
 
