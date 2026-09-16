@@ -682,6 +682,12 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_kharcha_core_checksum_func_is_spam(
     ): Int
+    external fun uniffi_kharcha_core_checksum_func_max_batch_items(
+    ): Int
+    external fun uniffi_kharcha_core_checksum_func_max_body_bytes(
+    ): Int
+    external fun uniffi_kharcha_core_checksum_func_max_sender_bytes(
+    ): Int
     external fun uniffi_kharcha_core_checksum_func_normalize_merchant_text(
     ): Int
     external fun uniffi_kharcha_core_checksum_func_parse_amount(
@@ -715,6 +721,12 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_kharcha_core_fn_func_is_spam(`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    external fun uniffi_kharcha_core_fn_func_max_batch_items(uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_kharcha_core_fn_func_max_body_bytes(uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_kharcha_core_fn_func_max_sender_bytes(uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun uniffi_kharcha_core_fn_func_normalize_merchant_text(`raw`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_kharcha_core_fn_func_parse_amount(`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -857,6 +869,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_kharcha_core_checksum_func_is_spam() and 0xFFFF) != 6271) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_kharcha_core_checksum_func_max_batch_items() and 0xFFFF) != 42144) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_kharcha_core_checksum_func_max_body_bytes() and 0xFFFF) != 44677) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_kharcha_core_checksum_func_max_sender_bytes() and 0xFFFF) != 62037) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_kharcha_core_checksum_func_normalize_merchant_text() and 0xFFFF) != 42102) {
@@ -1290,8 +1311,8 @@ public object FfiConverterTypeParsedPayment: FfiConverterRustBuffer<ParsedPaymen
 
 
 /**
- * A parsed capture with provenance. Mirrors pennywise `ParsedTransaction`:
- * sender + timestamp travel WITH the payment, not in a sidecar inbox line.
+ * A parsed capture with provenance: sender + timestamp + content hash travel
+ * WITH the payment, not in a sidecar inbox line.
  */
 data class ParsedTransaction (
     var `payment`: ParsedPayment
@@ -1307,11 +1328,14 @@ data class ParsedTransaction (
     var `timestampMs`: kotlin.Long
     , 
     /**
-     * Deterministic content key over sender|amount|direction|merchant|ref.
+     * Deterministic content key over amount|direction|merchant|ref.
      * FNV-1a64, stable across restarts (unlike SipHash) — safe as a dedupe
-     * key. This is what kharcha's upiRef+window and pennywise's md5(body)
-     * both wanted: exact redelivery across channels/times dies here even
-     * with no ref and outside the time window.
+     * key. Sender is DELIBERATELY excluded (audit): an SMS sender
+     * (`HDFCBK`) and a push package (`com.gpay`) for one payment would
+     * otherwise never hash equal, killing the cross-channel gate. Refs are
+     * unique per payment, so same-body collisions across senders need an
+     * identical ref too — except ref-less duplicates far apart in time,
+     * which merge (accepted, documented).
      */
     var `contentHash`: kotlin.ULong
     
@@ -2065,6 +2089,36 @@ public object FfiConverterSequenceOptionalTypeParsedTransaction: FfiConverterRus
     
         
         FfiConverterString.lower(`text`),_status)
+}
+    )
+    }
+    
+ fun `maxBatchItems`(): kotlin.ULong {
+            return FfiConverterULong.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_kharcha_core_fn_func_max_batch_items(
+    
+        _status)
+}
+    )
+    }
+    
+ fun `maxBodyBytes`(): kotlin.ULong {
+            return FfiConverterULong.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_kharcha_core_fn_func_max_body_bytes(
+    
+        _status)
+}
+    )
+    }
+    
+ fun `maxSenderBytes`(): kotlin.ULong {
+            return FfiConverterULong.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_kharcha_core_fn_func_max_sender_bytes(
+    
+        _status)
 }
     )
     }

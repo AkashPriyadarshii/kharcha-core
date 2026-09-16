@@ -6,10 +6,10 @@
 //! 1. Same non-empty `upi_ref` on a live row → duplicate (soft-deleted rows
 //!    are excluded, so a re-sent notification after deletion re-captures).
 //! 2. Same `content_hash` on a live row → exact redelivery (other channel,
-//!    other clock, no ref) → duplicate. Beats pennywise's md5(body): the hash
-//!    covers amount|direction|merchant|ref (sender excluded so SMS-vs-push
-//!    match), so carrier-added footers ("Bal: ...") don't break it the way
-//!    raw-body hashing does.
+//!    other clock, no ref) → duplicate. The hash covers
+//!    amount|direction|merchant|ref (sender excluded so SMS-vs-push match),
+//!    so carrier-added footers ("Bal: ...") don't break it the way raw-body
+//!    hashing does.
 //! 3. Cross-channel window: same amount + direction within ±5 min on a live
 //!    row. Two rows with valid but DISTINCT refs are genuine back-to-back
 //!    payments → insert. Otherwise, if the clocks drift ≤ 300 s → skip; if we

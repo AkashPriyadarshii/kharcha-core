@@ -9,7 +9,7 @@
 
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/releases"><img src="https://img.shields.io/badge/version-0.1.0-0A6B4D?style=flat-square" alt="Version"></a>
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-0A6B4D?style=flat-square" alt="License"></a>
-  <a href="https://github.com/AkashPriyadarshii/kharcha-core/actions"><img src="https://img.shields.io/badge/tests-56%20passing-0A6B4D?style=flat-square" alt="Tests"></a>
+  <a href="https://github.com/AkashPriyadarshii/kharcha-core/actions"><img src="https://img.shields.io/badge/tests-59%20passing-0A6B4D?style=flat-square" alt="Tests"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.96-0A6B4D?style=flat-square" alt="Rust"></a>
   <a href="https://crates.io/crates/kharcha-core"><img src="https://img.shields.io/crates/v/kharcha-core?style=flat-square&color=0A6B4D" alt="crates.io"></a>
 
@@ -33,7 +33,7 @@ Every UPI payment in India arrives as text first — an SMS, a push notification
 - **One engine.** `engine::parse()` is the only door in. SMS, notification, email body — all one string.
 - **Triple-signal dedupe.** UPI ref → content hash (footer-proof, unlike body hashing) → 300s cross-channel window.
 - **Exact money.** i64 paise end to end. Both parents float at the edge.
-- **Proven, not promised.** 56 tests incl. a 34-row SMS parity corpus. Zero clippy warnings.
+- **Proven, not promised.** 59 tests incl. a 35-row SMS parity corpus. Zero clippy warnings.
 
 ## Quickstart
 
@@ -60,7 +60,7 @@ cargo clippy --all-targets -- -D warnings
 
 | Command | What |
 |---|---|
-| `cargo test` | Full gate: 22 unit + 34 parity rows |
+| `cargo test` | Full gate: 24 unit + 35 parity rows |
 | `cargo run --bin demo -- "<sms>" [sender]` | Parse one message, print the struct |
 | `cargo clippy --all-targets -- -D warnings` | Lint gate: zero warnings |
 | `cargo build --release` | cdylib (`.so`/`.dll`) for FFI consumers |
@@ -92,7 +92,7 @@ src/
   split.rs           — exact-paise bill split
   ffi.rs             — uniffi surface (Kotlin first); core stays FFI-agnostic
   bin/demo.rs        — smoke CLI
-tests/parity.rs      — 34-row Dart-vs-Rust SMS corpus
+tests/parity.rs      — 35-test Dart-vs-Rust SMS corpus (24 unit tests live per-module)
 bindings/kotlin/     — generated uniffi Kotlin bindings (committed, never hand-edited)
 docs/                — INTEGRATION.md (humans), AGENT-INTEGRATION.md (agents)
 ```

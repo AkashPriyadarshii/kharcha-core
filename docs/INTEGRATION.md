@@ -49,9 +49,15 @@ decides; you store.
   income category, wallet match/auto-create from `accountMask`/`bankName`.
   The core answers insert-or-skip only.
 - **`needs_review`** = weak signal (contextual amount or fallback merchant). Surface it, don't drop it.
-- **`Option` = absence, not error.** `parse_capture` returns null for spam/casual text — and for bodies past 16 KB (`max_body_bytes()`; both expose the limit so you can distinguish: pre-check length caller-side if it matters). That is the design.
-- **Batch drains are capped** at `max_batch_items()` (10,000); the tail comes back null. Chunk bigger backlogs caller-side.
-- **`needs_review`** = exactly one of: contextual amount (no currency symbol) or fallback-merchant extraction. Surface it, don't drop it.
+- **`Option` = absence, not error.** `parse_capture`/`parse_captures` return
+  null for spam/casual text — and for bodies past 16 KB (`max_body_bytes()`) or
+  senders past 256 B (`max_sender_bytes()`); read the limits caller-side if the
+  distinction matters.
+- **Batch drains are capped** at `max_batch_items()` (10,000): the exported
+  `parse_captures` keeps the input length and the tail comes back null. Chunk
+  bigger backlogs caller-side.
+- **`needs_review`** = exactly one of: contextual amount (amount without a
+  currency symbol) or fallback-merchant extraction. Surface it, don't drop it.
 - **`split_bill` returns `[]`** for count 0 and for absurd counts (>10,000) alike — validate count yourself if the distinction matters.
 - **Threading.** Everything is pure: no globals beyond compiled regexes, no locks, no I/O. Call from any thread, including a background SMS-drain worker. Same input → same output, always.
 

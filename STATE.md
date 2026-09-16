@@ -19,7 +19,7 @@ Better-than-parents bets shipped:
 - `engine::parse(sms, sender, ts)` — single entry, sender-aware dispatch shape
   (generic backend today), `parse_batch()` for backlog drains
 - triple-signal dedupe: ref gate → content-hash gate (FNV-1a64, footer-proof,
-  unlike pennywise md5(body)) → 300s window with ref backfill
+  unlike raw-body hashing) → 300s window with ref backfill
 - i64 paise end to end (both parents float at the edge)
 
 ## Completed
@@ -39,8 +39,8 @@ Better-than-parents bets shipped:
    `bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt` (74 KB) generated
    with uniffi-bindgen 0.32.1 — all 10 fns + 7 records + 1 enum verified.
    Regen: `uniffi-bindgen generate --library ./target/debug/kharcha_core.dll --language kotlin --out-dir ./bindings/kotlin` (run from crate dir).
-2. v1.x: bank backends behind `engine::parse` (pennywise factory order as reference)
-3. Corpus growth: harvest harder SMS samples from kharcha test dir + pennywise bank tests
+2. v1.x: bank backends behind `engine::parse` (specific-first dispatch, written fresh)
+3. Corpus growth: harvest harder SMS samples from kharcha test dir + field captures
 
 Direction locked (owner): Flutter/Dart is being removed. Consumers are
 Kotlin (uniffi/JNI) + Rust only. `docs/INTEGRATION.md` (human) +

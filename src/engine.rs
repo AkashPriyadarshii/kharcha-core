@@ -4,13 +4,13 @@
 //!
 //! v0.1: sender-aware dispatch SHAPE with the generic parser as the only
 //! backend. v1.x plugs bank backends ahead of it without changing this
-//! signature (pennywise `BankParserFactory` order: specific senders first,
-//! generic fallback last).
+//! signature: specific senders first, first non-None wins, generic fallback
+//! last. Backends are written fresh from field-harvested samples.
 
 use crate::parser::{parse_upi_notification, ParsedPayment};
 
-/// A parsed capture with provenance. Mirrors pennywise `ParsedTransaction`:
-/// sender + timestamp travel WITH the payment, not in a sidecar inbox line.
+/// A parsed capture with provenance: sender + timestamp + content hash travel
+/// WITH the payment, not in a sidecar inbox line.
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct ParsedTransaction {
     pub payment: ParsedPayment,
@@ -34,9 +34,14 @@ pub struct ParsedTransaction {
 /// (Premortem: FFI callers pass arbitrary strings; the core must not spin.)
 pub const MAX_BODY_BYTES: usize = 16 * 1024;
 
+/// Sender cap. Sender IDs are shortcodes/packages (<64 B); unbounded senders
+/// would let a hostile FFI caller allocate arbitrarily (trimmed+uppercased
+/// copy per capture on the hot drain path).
+pub const MAX_SENDER_BYTES: usize = 256;
+
 /// Sender-aware parse. Today every sender routes to the generic backend.
 pub fn parse(sms_body: &str, sender: &str, timestamp_ms: i64) -> Option<ParsedTransaction> {
-    if sms_body.len() > MAX_BODY_BYTES {
+    if sms_body.len() > MAX_BODY_BYTES || sender.len() > MAX_SENDER_BYTES {
         return None;
     }
     let payment = parse_upi_notification(sms_body)?;

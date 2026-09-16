@@ -133,7 +133,11 @@ fn sbi_transfer() {
     assert_eq!(p.amount_paise, 15000);
     assert_eq!(p.merchant, "Chai Point");
     assert_eq!(p.upi_ref.as_deref(), Some("892019283019"));
-    // "ending 4321" without in/with is not a mask in either engine — pinned.
+    // "ending 4321" (no in/with) → None. Engine quirk, verified at runtime:
+    // fancy-regex doesn't rescan after the failed optional `ending (in|with)`
+    // group, so bare "ending" never reaches the digit capture (probe:
+    // "ending in 4321" → captures "4321"). Safer than Dart's engine:
+    // don't treat a bare account hint as a mask. Pinned, not a bug.
     assert!(p.account_mask.is_none());
 }
 
