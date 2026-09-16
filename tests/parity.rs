@@ -133,11 +133,7 @@ fn sbi_transfer() {
     assert_eq!(p.amount_paise, 15000);
     assert_eq!(p.merchant, "Chai Point");
     assert_eq!(p.upi_ref.as_deref(), Some("892019283019"));
-    // "ending 4321" (no in/with) → None. Engine quirk, verified at runtime:
-    // fancy-regex doesn't rescan after the failed optional `ending (in|with)`
-    // group, so bare "ending" never reaches the digit capture (probe:
-    // "ending in 4321" → captures "4321"). Safer than Dart's engine:
-    // don't treat a bare account hint as a mask. Pinned, not a bug.
+    // "ending 4321" without in/with is not a mask in either engine — pinned.
     assert!(p.account_mask.is_none());
 }
 
@@ -363,6 +359,10 @@ fn premortem_real_life_rows() {
     let big = "₹100 paid to Swiggy. ".repeat(2000);
     assert!(big.len() > 16 * 1024);
     assert!(kharcha_core::engine::parse(&big, "s", 0).is_none());
+    // Audit #4: the cap guards DIRECT parser callers too, not just engine.
+    assert!(kharcha_core::parser::parse_upi_notification(&big).is_none());
+    // Under the cap still parses.
+    assert!(kharcha_core::parser::parse_upi_notification("₹450 paid to Swiggy using UPI Ref 123456789012").is_some());
 }
 
 #[test]

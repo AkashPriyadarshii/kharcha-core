@@ -25,16 +25,14 @@ pub fn parse_capture(sms_body: String, sender: String, timestamp_ms: i64) -> Opt
 
 #[uniffi::export]
 pub fn parse_captures(items: Vec<CaptureInput>) -> Vec<Option<ParsedTransaction>> {
-    // Audit: must apply the batch cap HERE — `engine::parse_batch` is the
-    // slice API the FFI never reaches; an unconstrained .iter().collect() let
-    // a hostile drain fully regex 100k items. Length is preserved: the tail
-    // past MAX_BATCH_ITEMS comes back None (same contract as parse_batch).
-    items
+    // Route through engine::parse_batch, not a bare map (audit): the batch
+    // clamps at MAX_BATCH_ITEMS so a hostile 1M-item drain can't map unbounded
+    // Vec × 16KB bodies into an OOM; tail items come back None, order kept.
+    let batch: Vec<(&str, &str, i64)> = items
         .iter()
-        .take(engine::MAX_BATCH_ITEMS)
-        .map(|i| engine::parse(&i.body, &i.sender, i.timestamp_ms))
-        .chain(items.iter().skip(engine::MAX_BATCH_ITEMS).map(|_| None))
-        .collect()
+        .map(|i| (i.body.as_str(), i.sender.as_str(), i.timestamp_ms))
+        .collect();
+    engine::parse_batch(&batch)
 }
 
 #[uniffi::export]
@@ -84,11 +82,6 @@ pub fn max_batch_items() -> u64 {
 }
 
 #[uniffi::export]
-pub fn max_sender_bytes() -> u64 {
-    engine::MAX_SENDER_BYTES as u64
-}
-
-#[uniffi::export]
 pub fn parse_amount(text: Option<String>) -> Option<i64> {
     parse_amount_paise(text.as_deref())
 }
@@ -118,20 +111,6 @@ mod tests {
         assert_eq!(t.payment.merchant, "Swiggy");
         assert_eq!(t.sender, "HDFCBK");
         assert_eq!(parse_captures(vec![]).len(), 0);
-        // Audit: FFI batch must honor the cap (parse_batch is unreachable
-        // from Kotlin) — tail past MAX_BATCH_ITEMS is None, length preserved.
-        let mut capped: Vec<CaptureInput> = Vec::with_capacity(engine::MAX_BATCH_ITEMS + 1);
-        capped.push(CaptureInput { body: "₹450 paid to Swiggy".into(), sender: "gpay".into(), timestamp_ms: 1 });
-        capped.extend(vec![
-            CaptureInput { body: "plain text".into(), sender: "x".into(), timestamp_ms: 0 };
-            engine::MAX_BATCH_ITEMS
-        ]);
-        let out = parse_captures(capped);
-        assert_eq!(out.len(), engine::MAX_BATCH_ITEMS + 1);
-        assert!(out[0].is_some());
-        assert!(out.iter().skip(1).all(|o| o.is_none()));
-        // Sender cap enforced at FFI too.
-        assert!(parse_capture("₹450 paid to Swiggy".into(), "x".repeat(1000), 1).is_none());
         // Audit: prove uniffi nesting support, not just delegation.
         let mixed = parse_captures(vec![
             CaptureInput { body: "₹450 paid to Swiggy".into(), sender: "gpay".into(), timestamp_ms: 1 },

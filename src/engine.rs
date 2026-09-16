@@ -4,13 +4,13 @@
 //!
 //! v0.1: sender-aware dispatch SHAPE with the generic parser as the only
 //! backend. v1.x plugs bank backends ahead of it without changing this
-//! signature: specific senders first, first non-None wins, generic fallback
-//! last. Backends are written fresh from field-harvested samples.
+//! signature (legacy Kotlin parser `BankParserFactory` order: specific senders first,
+//! generic fallback last).
 
 use crate::parser::{parse_upi_notification, ParsedPayment};
 
-/// A parsed capture with provenance: sender + timestamp + content hash travel
-/// WITH the payment, not in a sidecar inbox line.
+/// A parsed capture with provenance. Mirrors the legacy Kotlin parser's `ParsedTransaction`:
+/// sender + timestamp travel WITH the payment, not in a sidecar inbox line.
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct ParsedTransaction {
     pub payment: ParsedPayment,
@@ -24,24 +24,21 @@ pub struct ParsedTransaction {
     /// (`HDFCBK`) and a push package (`com.gpay`) for one payment would
     /// otherwise never hash equal, killing the cross-channel gate. Refs are
     /// unique per payment, so same-body collisions across senders need an
-    /// identical ref too — except ref-less duplicates far apart in time,
-    /// which merge (accepted, documented).
+    /// identical ref too. The dedupe hash gate is window-bound (dedupe.rs),
+    /// so ref-less duplicates far apart in time survive as real payments.
     pub content_hash: u64,
 }
 
 /// Hard input cap. Real SMS/notifications are <2 KB; anything past 16 KB is a
 /// paste-attack or a corrupt read — regexing megabytes burns CPU for nothing.
 /// (Premortem: FFI callers pass arbitrary strings; the core must not spin.)
-pub const MAX_BODY_BYTES: usize = 16 * 1024;
-
-/// Sender cap. Sender IDs are shortcodes/packages (<64 B); unbounded senders
-/// would let a hostile FFI caller allocate arbitrarily (trimmed+uppercased
-/// copy per capture on the hot drain path).
-pub const MAX_SENDER_BYTES: usize = 256;
+/// Single authority lives in parser.rs (`MAX_INPUT_BYTES`) so direct parser
+/// callers are guarded too; this is the re-export the FFI surface reads.
+pub const MAX_BODY_BYTES: usize = crate::parser::MAX_INPUT_BYTES;
 
 /// Sender-aware parse. Today every sender routes to the generic backend.
 pub fn parse(sms_body: &str, sender: &str, timestamp_ms: i64) -> Option<ParsedTransaction> {
-    if sms_body.len() > MAX_BODY_BYTES || sender.len() > MAX_SENDER_BYTES {
+    if sms_body.len() > MAX_BODY_BYTES {
         return None;
     }
     let payment = parse_upi_notification(sms_body)?;

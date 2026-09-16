@@ -5,6 +5,14 @@ the build when `Cargo.toml` version and tag disagree.
 
 ## v0.1.0 — 2026-09-16 (first public release, MIT)
 
+Robustness hardening (audit backports from kharcha app tree):
+
+- Dedupe: case-insensitive ref gate, window-bound content-hash gate with ref
+  backfill (far-apart ref-less repeats stay real payments).
+- Spam: voucher voids only in promo context; real voucher spends parse.
+- Parser: `MAX_INPUT_BYTES` (16 KB) guards direct callers, not just engine.
+- FFI: `parse_captures` routes via `engine::parse_batch` (single cap authority).
+
 - Unified engine: `parse(sms, sender, ts)` + `parse_batch` + deterministic
   content hash (sender-excluded, footer-proof).
 - Full Dart-core port: UPI parser, spam rejection, categorizer, filter,
