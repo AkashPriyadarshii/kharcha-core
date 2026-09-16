@@ -24,7 +24,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - uses: android-actions/setup-android@v3
+      # No setup-android: ubuntu runners ship SDK+NDK preinstalled
+      # (ANDROID_NDK_HOME), which cargo-ndk auto-detects. The setup action
+      # flakes on the obsolete `tools` package — deleted, not pinned.
       - run: cargo install cargo-ndk --locked
       - run: cargo test
       - name: Build ${{ matrix.abi }}
