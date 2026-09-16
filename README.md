@@ -11,6 +11,7 @@
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-0A6B4D?style=flat-square" alt="License"></a>
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/actions"><img src="https://img.shields.io/badge/tests-56%20passing-0A6B4D?style=flat-square" alt="Tests"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.96-0A6B4D?style=flat-square" alt="Rust"></a>
+  <a href="https://crates.io/crates/kharcha-core"><img src="https://img.shields.io/crates/v/kharcha-core?style=flat-square&color=0A6B4D" alt="crates.io"></a>
 
   <p>by <a href="https://github.com/AkashPriyadarshii">Akash Priyadarshi</a></p>
   <p>
@@ -35,6 +36,10 @@ Every UPI payment in India arrives as text first — an SMS, a push notification
 - **Proven, not promised.** 56 tests incl. a 34-row SMS parity corpus. Zero clippy warnings.
 
 ## Quickstart
+
+```bash
+cargo add kharcha-core
+```
 
 ```bash
 git clone https://github.com/AkashPriyadarshii/kharcha-core

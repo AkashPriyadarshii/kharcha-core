@@ -9,7 +9,7 @@ storage, no clock, no network, no UI**. You bring those.
 | Consumer | How |
 |---|---|
 | Kotlin/JVM/Android | Generated bindings in `bindings/kotlin/` + the compiled lib (`.so`/`.dll`/`.dylib`). See below. |
-| Rust (service, CLI, tests) | `kharcha-core = { path = "../kharcha-core" }`, call `engine::parse` etc. directly. |
+| Rust (service, CLI, tests) | `cargo add kharcha-core` (crates.io) or `kharcha-core = { path = "../kharcha-core" }`, then call `engine::parse` etc. directly. |
 | Swift/Python/Ruby | `uniffi-bindgen generate --library <lib> --language <swift\|python\|ruby>` — same `.so`, new glue. No Rust changes needed. |
 
 ## Kotlin quickstart

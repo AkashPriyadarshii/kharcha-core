@@ -14,3 +14,4 @@ the build when `Cargo.toml` version and tag disagree.
 - Deliberate improvements over Dart: numeric payees kept, voucher promos
   voided, reversals as income, 16 KB input cap, 10k batch/split guards.
 - 59 tests green, clippy `-D warnings` clean, two independent audits fixed.
+- Published to crates.io (`cargo add kharcha-core`) alongside the GitHub release.
