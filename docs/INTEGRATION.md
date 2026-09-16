@@ -16,22 +16,24 @@ storage, no clock, no network, no UI**. You bring those.
 
 1. Build the lib: `cargo build --release` → `target/release/kharcha_core.so`
    (`.dll` on Windows, `.dylib` on macOS; Android needs the NDK targets —
-   see your app's Gradle NDK setup, the core is `no_std`-clean platform code).
+   see your app's Gradle NDK setup).
 2. Copy `bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt`
    (package `uniffi.kharcha_core`) into your source set.
 3. Load the lib once (`System.loadLibrary("kharcha_core")` / JNA), then:
 
 ```kotlin
-val hit = parseCapture(smsBody, sender, timestampMillis) ?: return
-when (checkCapture(hit.payment.upiRef, hit.payment.amountPaise,
-                   hit.payment.isIncome, ts, hit.contentHash, liveRows)) {
+val hit = parseCapture(smsBody, sender, timestampMs) ?: return // null = spam/casual/oversize, see below
+when (val d = checkCapture(hit.payment.upiRef, hit.payment.amountPaise,
+                           hit.payment.isIncome, timestampMs, hit.contentHash, liveRows)) {
     is CaptureDecision.Insert -> insert(hit)
-    is CaptureDecision.Skip -> if (it.backfillRef) row.updateRef(hit.payment.upiRef)
+    is CaptureDecision.Skip -> if (d.backfillRef) row.updateRef(hit.payment.upiRef)
 }
 ```
 
-`liveRows: List<ExistingRow>` is **your** query: non-deleted rows near `ts`
-(±5 min is enough) mapped onto `ExistingRow`. The core decides; you store.
+`liveRows: List<ExistingRow>` is **your** query: non-deleted rows near
+`timestampMs` (±5 min is enough), **recency-ordered** — the first window match
+decides, so wrong order means the backfill lands on the wrong row. The core
+decides; you store.
 
 ## Contracts you must not reinterpret
 
@@ -47,7 +49,11 @@ when (checkCapture(hit.payment.upiRef, hit.payment.amountPaise,
   income category, wallet match/auto-create from `accountMask`/`bankName`.
   The core answers insert-or-skip only.
 - **`needs_review`** = weak signal (contextual amount or fallback merchant). Surface it, don't drop it.
-- **`Option` = absence, not error.** `parse_capture` returns null for spam/casual text. That is the design.
+- **`Option` = absence, not error.** `parse_capture` returns null for spam/casual text — and for bodies past 16 KB (`max_body_bytes()`; both expose the limit so you can distinguish: pre-check length caller-side if it matters). That is the design.
+- **Batch drains are capped** at `max_batch_items()` (10,000); the tail comes back null. Chunk bigger backlogs caller-side.
+- **`needs_review`** = exactly one of: contextual amount (no currency symbol) or fallback-merchant extraction. Surface it, don't drop it.
+- **`split_bill` returns `[]`** for count 0 and for absurd counts (>10,000) alike — validate count yourself if the distinction matters.
+- **Threading.** Everything is pure: no globals beyond compiled regexes, no locks, no I/O. Call from any thread, including a background SMS-drain worker. Same input → same output, always.
 
 ## API map
 
@@ -59,11 +65,25 @@ when (checkCapture(hit.payment.upiRef, hit.payment.amountPaise,
 | `apply_filter` | `TransactionFilter.apply` |
 | `split_bill`, `parse_amount`, `is_spam`, `encode_inbox_line` | Same-named Dart helpers |
 
-## Threading
+## Pin a release (FOSS consumers + kharcha shell)
 
-Everything is pure: no globals beyond compiled regexes, no locks, no I/O.
-Call `parse_capture`/`check_capture` from any thread, including a background
-SMS-drain worker. Same input → same output, always.
+Tags are the only channel. Each tag ships `kharcha_core-<abi>.so` (arm64-v8a
+for devices, x86_64 for emulator) + the matching `kharcha_core.kt` — always
+as a pair, never mix versions across tags.
+
+```bash
+TAG=v0.1.0
+curl -sSL -o kharcha_core-arm64-v8a.so https://github.com/AkashPriyadarshii/kharcha-core/releases/download/$TAG/kharcha_core-arm64-v8a.so
+curl -sSL -o kharcha_core.kt https://github.com/AkashPriyadarshii/kharcha-core/releases/download/$TAG/kharcha_core.kt
+```
+
+```bash
+# .so → app/src/main/jniLibs/<abi>/, .kt → source set, then:
+System.loadLibrary("kharcha_core")
+```
+
+Bump = re-download at the new tag. The kharcha shell wraps this in
+`scripts/sync-core.sh <tag>` (curl pair + stamp version into BuildConfig).
 
 ## Regenerating bindings
 

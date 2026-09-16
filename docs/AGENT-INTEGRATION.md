@@ -40,7 +40,7 @@ bank tests. Never reorder existing backends without stating why.
 ## Verification gate (every change)
 
 ```bash
-cargo test                                  # 50+ tests, incl. 29 parity rows
+cargo test                                  # 59 tests: 24 unit + 35 parity rows
 cargo clippy --all-targets -- -D warnings   # zero warnings, no allows
 cargo build                                 # cdylib still links
 ```

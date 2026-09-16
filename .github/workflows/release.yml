@@ -1,0 +1,56 @@
+# Release: tag in, .so + .kt out. Nothing else ships.
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-linux-android
+            abi: arm64-v8a
+          - target: x86_64-linux-android
+            abi: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches Cargo.toml
+        run: test "v$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)" = "${GITHUB_REF_NAME}"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: android-actions/setup-android@v3
+      - run: cargo install cargo-ndk --locked
+      - run: cargo test
+      - name: Build ${{ matrix.abi }}
+        run: cargo ndk -t ${{ matrix.abi }} -o ./jniLibs build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.abi }}
+          path: jniLibs/${{ matrix.abi }}/libkharcha_core.so
+
+  publish:
+    needs: android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install uniffi --version 0.32.1 --features cli
+      - name: Generate bindings from this commit
+        run: |
+          cargo build
+          uniffi-bindgen generate --library ./target/debug/libkharcha_core.so --language kotlin --out-dir ./bindings/kotlin
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./assets
+      - name: Release (.so pair + .kt, notes from CHANGELOG)
+        run: |
+          gh release create "${GITHUB_REF_NAME}" ./assets/*/*.so ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt \
+            --title "${GITHUB_REF_NAME}" --notes "$(awk '/^## /{c++} c==1' CHANGELOG.md)"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
