@@ -50,9 +50,19 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ./assets
+      # Both ABIs build the same basename — rename per-ABI or the second
+      # upload collides (HTTP 404 on duplicate asset name). Fail loud if
+      # any .so is missing instead of shipping a half release.
+      - name: Stage release assets
+        run: |
+          test -f ./assets/arm64-v8a/libkharcha_core.so
+          test -f ./assets/x86_64/libkharcha_core.so
+          mv ./assets/arm64-v8a/libkharcha_core.so ./kharcha_core-arm64-v8a.so
+          mv ./assets/x86_64/libkharcha_core.so ./kharcha_core-x86_64.so
+          test -f ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt
       - name: Release (.so pair + .kt, notes from CHANGELOG)
         run: |
-          gh release create "${GITHUB_REF_NAME}" ./assets/*/*.so ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt \
+          gh release create "${GITHUB_REF_NAME}" ./kharcha_core-*.so ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt \
             --title "${GITHUB_REF_NAME}" --notes "$(awk '/^## /{c++} c==1' CHANGELOG.md)"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
