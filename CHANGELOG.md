@@ -3,6 +3,19 @@
 Discipline: dated section per tag BEFORE tagging. The release workflow fails
 the build when `Cargo.toml` version and tag disagree.
 
+## Unreleased
+
+UPI app push-notification parsing (the other half of India's payment text):
+
+- Parser: `credited by <name>` income payees, VPA handles with underscores
+  (`jio_recharge@ybl`), wallet-brand merchants ("credited to your Paytm wallet"
+  → Paytm), refund lookahead extended for "processed/completed" tails.
+- Corpus: `tests/notifications.rs` — 40 rows across GPay, PhonePe, Paytm,
+  Amazon Pay UPI, BHIM, CRED; wallet-balance extraction, ref capture,
+  promo/order-tracking rejection.
+- Dedupe: cross-channel contract tests (push+SMS same ref → one record;
+  ref-less redelivery → hash gate).
+
 ## v0.1.0 — 2026-09-16 (first public release, MIT)
 
 Robustness hardening (audit backports from kharcha app tree):
