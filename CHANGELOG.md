@@ -3,7 +3,19 @@
 Discipline: dated section per tag BEFORE tagging. The release workflow fails
 the build when `Cargo.toml` version and tag disagree.
 
+## v0.1.2 — 2026-09-20
+
+Deterministic fixes + max-best regex follow-up (76 tests, filter/mandate/corpus + docs sync).
+
 ## v0.1.1 — 2026-09-20
+
+Deterministic fixes + max-best regex (76 tests):
+
+- BigBasket WhatsApp promo guard: `engine::parse` sender-aware (WhatsApp/Telegram + credited+wallet without anchor → null), no merchant hardcode.
+- Money: exact i64 paise (no f64), filter hoist + lazy amount, hash no-alloc, `replace_all` guard.
+- Regex: BAL_RE + bank list + UTR RRN, mandate scoping, bare-ref char-boundary window, 5 P1 parity rows.
+
+## v0.1.1 — 2026-09-20 (notifications)
 
 UPI app push-notification parsing (the other half of India's payment text):
 

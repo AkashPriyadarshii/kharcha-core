@@ -6,10 +6,10 @@
 
 ## Current status
 
-**v0.1.0 published (2026-09-16).** Release carries `kharcha_core-arm64-v8a.so`
-+ `kharcha_core-x86_64.so` + `kharcha_core.kt` (pipeline fixed twice: runner
-NDK instead of setup-android; per-ABI rename before upload). Also on
-crates.io as `kharcha-core` 0.1.0. 59 tests green (24 unit + 35 parity),
+**v0.1.2 pending (2026-09-20).** Builds `kharcha_core-arm64-v8a.so`
+**v0.1.1 published (2026-09-20).** Release carries `kharcha_core-arm64-v8a.so`
++ `kharcha_core-x86_64.so` + `kharcha_core.kt`. Also on
+crates.io as `kharcha-core` 0.1.1. 76 tests green (24 unit + 39 parity + 13 notifications),
 clippy zero warnings, two deps (`fancy-regex` — Dart lookahead ports verbatim;
 0.14 rejects `(?-u)` so `\d`→`[0-9]` / `\s`→`[ \t\n\x0B\f\r]` is mechanical,
 `\b` stays Unicode — documented in non_transaction.rs; `uniffi` for the

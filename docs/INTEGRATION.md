@@ -50,9 +50,8 @@ decides; you store.
   The core answers insert-or-skip only.
 - **`needs_review`** = weak signal (contextual amount or fallback merchant). Surface it, don't drop it.
 - **`Option` = absence, not error.** `parse_capture`/`parse_captures` return
-  null for spam/casual text — and for bodies past 16 KB (`max_body_bytes()`) or
-  senders past 256 B (`max_sender_bytes()`); read the limits caller-side if the
-  distinction matters.
+   null for spam/casual text — and for bodies past 16 KB (`max_body_bytes()`);
+   read the limit caller-side if the distinction matters.
 - **Batch drains are capped** at `max_batch_items()` (10,000): the exported
   `parse_captures` keeps the input length and the tail comes back null. Chunk
   bigger backlogs caller-side.
@@ -78,7 +77,7 @@ for devices, x86_64 for emulator) + the matching `kharcha_core.kt` — always
 as a pair, never mix versions across tags.
 
 ```bash
-TAG=v0.1.0
+TAG=v0.1.2
 curl -sSL -o kharcha_core-arm64-v8a.so https://github.com/AkashPriyadarshii/kharcha-core/releases/download/$TAG/kharcha_core-arm64-v8a.so
 curl -sSL -o kharcha_core.kt https://github.com/AkashPriyadarshii/kharcha-core/releases/download/$TAG/kharcha_core.kt
 ```
@@ -97,7 +96,7 @@ After any `ffi.rs` / record change:
 
 ```bash
 cargo build
-uniffi-bindgen generate --library target/debug/kharcha_core.dll --language kotlin --out-dir bindings/kotlin
+uniffi-bindgen generate --library target/debug/kharcha_core.dll --language kotlin --out-dir bindings/kotlin/uniffi/kharcha_core  # .so on Linux, .dylib on macOS; pin bindgen to uniffi version in Cargo.toml (0.32.1)
 ```
 
 Commit the regenerated `.kt` in the same change. Never hand-edit `bindings/`.
