@@ -7,7 +7,7 @@
   <h1>kharcha-core</h1>
   <p><strong>Deterministic Rust engine for UPI expense tracking. Text in, payment out.</strong></p>
 
-  <a href="https://github.com/AkashPriyadarshii/kharcha-core/releases"><img src="https://img.shields.io/badge/version-0.1.0-0A6B4D?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/AkashPriyadarshii/kharcha-core/releases"><img src="https://img.shields.io/badge/version-0.1.1-0A6B4D?style=flat-square" alt="Version"></a>
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-0A6B4D?style=flat-square" alt="License"></a>
   <a href="https://github.com/AkashPriyadarshii/kharcha-core/actions"><img src="https://img.shields.io/badge/tests-73%20passing-0A6B4D?style=flat-square" alt="Tests"></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.96-0A6B4D?style=flat-square" alt="Rust"></a>

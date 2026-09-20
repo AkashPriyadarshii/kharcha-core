@@ -3,7 +3,7 @@
 Discipline: dated section per tag BEFORE tagging. The release workflow fails
 the build when `Cargo.toml` version and tag disagree.
 
-## Unreleased
+## v0.1.1 — 2026-09-20
 
 UPI app push-notification parsing (the other half of India's payment text):
 

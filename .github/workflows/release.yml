@@ -1,8 +1,14 @@
-# Release: tag in, .so + .kt out. Nothing else ships.
+# Release: version bump on main → tag + .so/.kt + GitHub release.
+# Two entrances, one pipeline:
+#   - push tag v*  → manual/historical release (notes from CHANGELOG)
+#   - push main    → version gate; if Cargo.toml version has no tag yet,
+#                    build, tag it, release. (GitHub token pushes don't
+#                    re-trigger workflows, so this run must tag AND release.)
 name: release
 on:
   push:
     tags: ["v*"]
+    branches: [main]
 
 permissions:
   contents: write
@@ -19,25 +25,45 @@ jobs:
             abi: x86_64
     steps:
       - uses: actions/checkout@v4
-      - name: Tag matches Cargo.toml
-        run: test "v$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)" = "${GITHUB_REF_NAME}"
+      # Version gate: skip the whole build when this version already shipped.
+      # Tag path always releases (tag names v*, version must match below).
+      - name: Version gate
+        id: gate
+        run: |
+          VER=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            test "v${VER}" = "${GITHUB_REF_NAME}"
+            echo "do_release=true" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --tags origin "v${VER}" | grep -q "refs/tags/v${VER}"; then
+            echo "v${VER} already tagged — nothing to release"
+            echo "do_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "v${VER} is new — auto-release"
+            echo "do_release=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: dtolnay/rust-toolchain@stable
+        if: steps.gate.outputs.do_release == 'true'
         with:
           targets: ${{ matrix.target }}
       # No setup-android: ubuntu runners ship SDK+NDK preinstalled
       # (ANDROID_NDK_HOME), which cargo-ndk auto-detects. The setup action
       # flakes on the obsolete `tools` package — deleted, not pinned.
       - run: cargo install cargo-ndk --locked
+        if: steps.gate.outputs.do_release == 'true'
       - run: cargo test
+        if: steps.gate.outputs.do_release == 'true'
       - name: Build ${{ matrix.abi }}
+        if: steps.gate.outputs.do_release == 'true'
         run: cargo ndk -t ${{ matrix.abi }} -o ./jniLibs build --release
       - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.do_release == 'true'
         with:
           name: ${{ matrix.abi }}
           path: jniLibs/${{ matrix.abi }}/libkharcha_core.so
 
   publish:
     needs: android
+    if: needs.android.outputs.do_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,9 +86,17 @@ jobs:
           mv ./assets/arm64-v8a/libkharcha_core.so ./kharcha_core-arm64-v8a.so
           mv ./assets/x86_64/libkharcha_core.so ./kharcha_core-x86_64.so
           test -f ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt
+      # Auto-tag on the branch path; tag path already carries the tag.
+      - name: Tag (branch path)
+        if: github.ref_type == 'branch'
+        run: |
+          VER=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+          git tag "v${VER}"
+          git push origin "v${VER}"
       - name: Release (.so pair + .kt, notes from CHANGELOG)
         run: |
-          gh release create "${GITHUB_REF_NAME}" ./kharcha_core-*.so ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt \
-            --title "${GITHUB_REF_NAME}" --notes "$(awk '/^## /{c++} c==1' CHANGELOG.md)"
+          VER=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
+          gh release create "v${VER}" ./kharcha_core-*.so ./bindings/kotlin/uniffi/kharcha_core/kharcha_core.kt \
+            --title "v${VER}" --notes "$(awk '/^## /{c++} c==1' CHANGELOG.md)"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
