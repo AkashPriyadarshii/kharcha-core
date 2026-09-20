@@ -16,6 +16,8 @@ permissions:
 jobs:
   android:
     runs-on: ubuntu-latest
+    outputs:
+      do_release: ${{ steps.gate.outputs.do_release }}
     strategy:
       matrix:
         include:
