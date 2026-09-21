@@ -24,6 +24,8 @@
   </p>
 </div>
 
+[![crates.io](https://img.shields.io/crates/v/kharcha-core?style=flat-square)](https://crates.io/crates/kharcha-core) [![downloads](https://img.shields.io/crates/d/kharcha-core?style=flat-square)](https://crates.io/crates/kharcha-core) [![release](https://img.shields.io/github/v/release/AkashPriyadarshii/kharcha-core?style=flat-square&label=release)](https://github.com/AkashPriyadarshii/kharcha-core/releases)
+
 ---
 
 ## Why
