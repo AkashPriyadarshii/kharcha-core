@@ -29,3 +29,5 @@ cargo clippy -- -D warnings
 - [ ] Parity row(s) added for the behavior
 - [ ] `cargo test` green
 - [ ] STATE.md updated
+
+- Profile: release-order touch 2026-09-22
