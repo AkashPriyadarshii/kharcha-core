@@ -123,6 +123,6 @@ docs/                — INTEGRATION.md (humans), AGENT-INTEGRATION.md (agents)
 
 ### Social
 
-[X / Twitter](https://x.com/Akash__ydv001) · [Threads](https://www.threads.com/@free_dev2026) · [Instagram](https://www.instagram.com/akash.priyadarshii/) · [Reddit](https://reddit.com/user/DragonfruitWeak2801)
+[X / Twitter](https://x.com/Akash__ydv001) · [Threads](https://www.threads.com/@free_dev2026) · [Instagram](https://www.instagram.com/akash.priyadarshii/) · [Reddit](https://reddit.com/user/akashpriyadarshi)
 
 *Deterministic UPI parsing in Rust — sms parser, upi expense tracker core, offline-first fintech.*
