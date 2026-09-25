@@ -2,8 +2,6 @@
 
 **Support:** fuel the next build — [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/AkashPriyadarshi)
 
-*Fuel the next build:* 
-
 <!-- Description: Rule-based Rust core that turns UPI/SMS/notification text into structured payments. Spam rejection, categorization, exact paise money, triple-signal dedupe, uniffi Kotlin bridge. No AI. -->
 <!-- Keywords: upi expense tracker, sms parser rust, upi parser, bank sms parser india, gpay phonepe paytm parser, transaction dedupe, uniffi kotlin, paise money, offline expense tracker, upi number parser -->
 
