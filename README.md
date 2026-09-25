@@ -1,4 +1,7 @@
 <!-- Title: kharcha-core — deterministic Rust engine for UPI expense tracking -->
+
+*Fuel the next build:* [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/AkashPriyadarshi)
+
 <!-- Description: Rule-based Rust core that turns UPI/SMS/notification text into structured payments. Spam rejection, categorization, exact paise money, triple-signal dedupe, uniffi Kotlin bridge. No AI. -->
 <!-- Keywords: upi expense tracker, sms parser rust, upi parser, bank sms parser india, gpay phonepe paytm parser, transaction dedupe, uniffi kotlin, paise money, offline expense tracker, upi number parser -->
 
@@ -119,7 +122,7 @@ docs/                — INTEGRATION.md (humans), AGENT-INTEGRATION.md (agents)
 
 ### Author
 
-**Akash Priyadarshi** (Patna, Bihar, India) · [GitHub](https://github.com/AkashPriyadarshii) · [Portfolio](https://akashpriyadarshi.vercel.app) · [LinkedIn](https://linkedin.com/in/akash-priyadarshi-1aa51b37a) · [Resume](https://akashpriyadarshii.github.io/Resume/)
+**Akash Priyadarshi** (Patna, Bihar, India) · [GitHub](https://github.com/AkashPriyadarshii) · [Portfolio](https://akashpriyadarshi.vercel.app) · [LinkedIn](https://linkedin.com/in/akashpriyadarshii) · [Resume](https://akashpriyadarshii.github.io/Resume/)
 
 ### Social
 
